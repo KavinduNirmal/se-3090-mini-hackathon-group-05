@@ -1,7 +1,7 @@
 'use client';
 
 import * as React from 'react';
-import { useAuth, useSignUp } from '@clerk/nextjs';
+import { useAuth, useSignUp, useUser } from '@clerk/nextjs';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { ArrowLeft, ArrowRight, Check, HeartHandshake, Leaf, LoaderCircle, Store } from 'lucide-react';
@@ -29,6 +29,7 @@ const ROLE_META: Record<
 function SignUpScreen() {
   const { signUp, errors, fetchStatus } = useSignUp();
   const { isLoaded, isSignedIn } = useAuth();
+  const { user } = useUser();
   const router = useRouter();
   const searchParams = useSearchParams();
 
@@ -47,9 +48,11 @@ function SignUpScreen() {
 
   React.useEffect(() => {
     if (isLoaded && isSignedIn) {
-      router.replace('/');
+      const activeRole = (user?.unsafeMetadata?.role || role) as UserRole | undefined;
+      const targetHome = homeForRole(activeRole);
+      router.replace(targetHome);
     }
-  }, [isLoaded, isSignedIn, router]);
+  }, [isLoaded, isSignedIn, user, role, router]);
 
   const activeType = role ? ACCOUNT_TYPES[role] : null;
 

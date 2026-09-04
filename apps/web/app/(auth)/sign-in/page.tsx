@@ -1,11 +1,12 @@
 'use client';
 
 import * as React from 'react';
-import { useAuth, useSignIn } from '@clerk/nextjs';
+import { useAuth, useSignIn, useUser } from '@clerk/nextjs';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { ArrowRight, LoaderCircle, Leaf } from 'lucide-react';
 
+import { homeForRole, type UserRole } from '@/lib/account-types';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -16,9 +17,10 @@ import { Separator } from '@/components/ui/separator';
 function SignInForm() {
   const { signIn, errors, fetchStatus } = useSignIn();
   const { isLoaded, isSignedIn } = useAuth();
+  const { user } = useUser();
   const router = useRouter();
   const searchParams = useSearchParams();
-  const redirectUrl = searchParams.get('redirect_url') ?? '/';
+  const redirectUrl = searchParams.get('redirect_url');
 
   const [pending, setPending] = React.useState(false);
   const [error, setError] = React.useState<string | null>(null);
@@ -28,9 +30,11 @@ function SignInForm() {
   React.useEffect(() => {
     if (isLoaded && isSignedIn && !redirecting.current) {
       redirecting.current = true;
-      router.replace('/');
+      const userRole = user?.unsafeMetadata?.role as UserRole | undefined;
+      const destination = redirectUrl || homeForRole(userRole);
+      router.replace(destination);
     }
-  }, [isLoaded, isSignedIn, router]);
+  }, [isLoaded, isSignedIn, user, redirectUrl, router]);
 
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -60,9 +64,11 @@ function SignInForm() {
     }
 
     setPending(true);
+    const userRole = user?.unsafeMetadata?.role as UserRole | undefined;
+    const targetUrl = redirectUrl || homeForRole(userRole);
     const { error: finalizeError } = await signIn.finalize({
       navigate: ({ decorateUrl }) => {
-        const url = decorateUrl(redirectUrl);
+        const url = decorateUrl(targetUrl);
         if (url.startsWith('http')) window.location.assign(url);
         else router.push(url);
       },
