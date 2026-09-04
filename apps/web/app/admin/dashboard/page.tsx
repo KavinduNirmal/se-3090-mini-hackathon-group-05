@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import { auth, clerkClient } from '@clerk/nextjs/server';
 import {
   AlertTriangle,
   CheckCircle2,
@@ -20,7 +21,26 @@ function mealEstimate(kg: number) {
   return Math.floor(kg / 0.4);
 }
 
+function greetingFor(firstName: string | null): string {
+  const hour = new Date().getHours();
+  const period = hour < 12 ? 'Good morning' : hour < 18 ? 'Good afternoon' : 'Good evening';
+  return firstName ? `${period}, ${firstName}` : 'Good day, operator';
+}
+
+async function currentAdminFirstName(): Promise<string | null> {
+  try {
+    const { userId } = await auth();
+    if (!userId) return null;
+    const client = await clerkClient();
+    const user = await client.users.getUser(userId);
+    return user.firstName || user.username || null;
+  } catch {
+    return null;
+  }
+}
+
 export default async function AdminDashboardPage() {
+  const firstName = await currentAdminFirstName();
   let overview: OverviewData | null = null;
   let error: string | null = null;
 
@@ -66,7 +86,7 @@ export default async function AdminDashboardPage() {
     <div className="space-y-8">
       <div>
         <h1 className="text-2xl font-extrabold tracking-[-0.02em] text-foreground sm:text-3xl">
-          Good day, operator
+          {greetingFor(firstName)}
         </h1>
         <p className="mt-1 text-sm text-muted-foreground">
           Live overview of registrations, donations and rescued food across Share a Plate.

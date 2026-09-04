@@ -19,10 +19,19 @@ import { toast } from 'sonner';
 
 import type { AdminCharity } from '@/lib/server/admin';
 import { StatusBadge } from '@/components/admin/status-badge';
+import { SortableTh, type SortDir } from '@/components/admin/sortable-th';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000';
+
+const CHARITY_SORTS: Record<string, (charity: AdminCharity) => string | number> = {
+  name: (c) => c.name.toLowerCase(),
+  registrationNo: (c) => (c.registrationNo ?? '').toLowerCase(),
+  status: (c) => c.status,
+  verified: (c) => (c.verified ? 1 : 0),
+  createdAt: (c) => c.createdAt,
+};
 
 function formatDate(iso: string) {
   return new Date(iso).toLocaleDateString('en-US', {
@@ -37,6 +46,26 @@ export function CharitiesTable({ charities }: { charities: AdminCharity[] }) {
   const { getToken } = useAuth();
   const [review, setReview] = React.useState<AdminCharity | null>(null);
   const [busy, setBusy] = React.useState<{ id: string; action: string } | null>(null);
+  const [sortKey, setSortKey] = React.useState('createdAt');
+  const [sortDir, setSortDir] = React.useState<SortDir>('desc');
+
+  const sorted = React.useMemo(() => {
+    const arr = [...charities];
+    const get = CHARITY_SORTS[sortKey] ?? CHARITY_SORTS.createdAt;
+    arr.sort((a, b) => {
+      const va = get(a);
+      const vb = get(b);
+      if (va < vb) return -1;
+      if (va > vb) return 1;
+      return 0;
+    });
+    return sortDir === 'asc' ? arr : arr.reverse();
+  }, [charities, sortKey, sortDir]);
+
+  function requestSort(key: string) {
+    setSortKey(key);
+    setSortDir((dir) => (sortKey === key && dir === 'asc' ? 'desc' : 'asc'));
+  }
 
   async function runAction(charity: AdminCharity, action: 'verify' | 'reject') {
     setBusy({ id: charity.id, action });
@@ -89,16 +118,49 @@ export function CharitiesTable({ charities }: { charities: AdminCharity[] }) {
           <table className="w-full min-w-[720px] text-sm">
             <thead>
               <tr className="border-b border-border bg-muted/40 text-left text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-                <th className="px-5 py-3">Organization</th>
-                <th className="px-4 py-3">Registration no.</th>
-                <th className="px-4 py-3">Status</th>
-                <th className="px-4 py-3">Verified</th>
-                <th className="px-4 py-3">Registered</th>
-                <th className="px-4 py-3 text-right">Actions</th>
+                <SortableTh
+                  label="Organization"
+                  sortKey="name"
+                  activeKey={sortKey}
+                  dir={sortDir}
+                  onSort={requestSort}
+                  className="px-5"
+                />
+                <SortableTh
+                  label="Registration no."
+                  sortKey="registrationNo"
+                  activeKey={sortKey}
+                  dir={sortDir}
+                  onSort={requestSort}
+                />
+                <SortableTh
+                  label="Status"
+                  sortKey="status"
+                  activeKey={sortKey}
+                  dir={sortDir}
+                  onSort={requestSort}
+                />
+                <SortableTh
+                  label="Verified"
+                  sortKey="verified"
+                  activeKey={sortKey}
+                  dir={sortDir}
+                  onSort={requestSort}
+                />
+                <SortableTh
+                  label="Registered"
+                  sortKey="createdAt"
+                  activeKey={sortKey}
+                  dir={sortDir}
+                  onSort={requestSort}
+                />
+                <th className="px-4 py-3 text-right text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                  Actions
+                </th>
               </tr>
             </thead>
             <tbody className="divide-y divide-border">
-              {charities.map((charity) => (
+              {sorted.map((charity) => (
                 <tr key={charity.id} className="transition-colors hover:bg-muted/30">
                   <td className="px-5 py-3.5">
                     <div className="flex items-center gap-3">
