@@ -90,3 +90,23 @@ export async function updateDonationStatusApi(id: string, status: string) {
     return null;
   }
 }
+
+export async function updateDonationDetailsApi(id: string, payload: Partial<DonationPayload>) {
+  try {
+    const res = await fetch(`${API_BASE_URL}/api/donations/${id}`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(payload),
+    });
+    const data = await res.json();
+    if (!res.ok || !data.success) {
+      throw new Error(data.error || 'Failed to update donation details');
+    }
+    return data.data;
+  } catch (err: any) {
+    console.warn('[api] Failed to update donation details:', err.message);
+    throw err;
+  }
+}

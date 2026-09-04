@@ -23,6 +23,8 @@ import {
   ArrowUpRight,
   Sparkles,
   RefreshCw,
+  AlertCircle,
+  Edit3,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -31,6 +33,7 @@ import { AuthNav } from '@/components/auth-nav';
 import { DietaryBadge } from './dietary-badge';
 import { DonationFormModal, NewDonationData } from './donation-form-modal';
 import { DonationDetailsModal, FoodListing } from './donation-details-modal';
+import { DonationEditModal } from './donation-edit-modal';
 import { toast } from 'sonner';
 import { fetchDonations, updateDonationStatusApi } from '@/lib/api/donations';
 
@@ -38,13 +41,14 @@ const INITIAL_LISTINGS: FoodListing[] = [];
 
 export function RestaurantDashboard() {
   const [listings, setListings] = useState<FoodListing[]>(INITIAL_LISTINGS);
-  const [activeTab, setActiveTab] = useState<'all' | 'active' | 'claimed' | 'collected'>('all');
+  const [activeTab, setActiveTab] = useState<'all' | 'available' | 'reserved' | 'collected' | 'expired'>('all');
   const [searchQuery, setSearchQuery] = useState('');
   const [viewMode, setViewMode] = useState<'grid' | 'table'>('grid');
 
   // Modals state
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [selectedListing, setSelectedListing] = useState<FoodListing | null>(null);
+  const [editingListing, setEditingListing] = useState<FoodListing | null>(null);
 
   // Fetch backend data on mount
   useEffect(() => {
@@ -62,7 +66,7 @@ export function RestaurantDashboard() {
   // Dynamic Metrics Calculation (Strictly fulfilling prompt requirements)
   const metrics = useMemo(() => {
     const totalDonations = listings.length;
-    const activeListings = listings.filter((l) => l.status === 'active').length;
+    const activeListings = listings.filter((l) => l.status === 'active' || l.status === 'available').length;
     const foodCollected = listings.filter((l) => l.status === 'collected').length;
     const totalKgDonated = listings.reduce((acc, item) => acc + item.weightKg, 0);
 
@@ -77,8 +81,17 @@ export function RestaurantDashboard() {
   // Filtered listings
   const filteredListings = useMemo(() => {
     return listings.filter((item) => {
-      const matchesTab =
-        activeTab === 'all' || item.status === activeTab;
+      let matchesTab = activeTab === 'all';
+      if (activeTab === 'available') {
+        matchesTab = item.status === 'active' || item.status === 'available';
+      } else if (activeTab === 'reserved') {
+        matchesTab = item.status === 'claimed' || item.status === 'reserved';
+      } else if (activeTab === 'collected') {
+        matchesTab = item.status === 'collected';
+      } else if (activeTab === 'expired') {
+        matchesTab = item.status === 'expired';
+      }
+
       const matchesSearch =
         item.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
         item.category.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -329,9 +342,25 @@ export function RestaurantDashboard() {
         </section>
 
         {/* ---------------------------------------------------- */}
-        {/* LISTINGS MANAGEMENT TABS & CONTROLS */}
+        {/* MY FOOD DONATIONS - LISTINGS TABS & CONTROLS */}
         {/* ---------------------------------------------------- */}
-        <section className="space-y-4">
+        <section className="space-y-4 pt-2">
+          <div className="flex items-center justify-between">
+            <h2 className="text-xl font-bold tracking-tight text-foreground">
+              My Food Donations
+            </h2>
+            <Button
+              asChild
+              size="sm"
+              className="bg-primary hover:bg-primary/90 text-primary-foreground font-semibold shadow-sm gap-1.5"
+            >
+              <Link href="/donor/create">
+                <Plus className="size-4" />
+                <span>+ Create Donation</span>
+              </Link>
+            </Button>
+          </div>
+
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-border pb-4">
             {/* Tabs */}
             <div className="flex items-center gap-1 bg-muted/60 p-1 rounded-xl border border-border w-full sm:w-auto overflow-x-auto">
@@ -343,31 +372,31 @@ export function RestaurantDashboard() {
                     : 'text-muted-foreground hover:text-foreground'
                 }`}
               >
-                All Listings ({listings.length})
+                All ({listings.length})
               </button>
 
               <button
-                onClick={() => setActiveTab('active')}
+                onClick={() => setActiveTab('available')}
                 className={`px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all whitespace-nowrap flex items-center gap-1.5 cursor-pointer ${
-                  activeTab === 'active'
+                  activeTab === 'available'
                     ? 'bg-amber-500/15 text-amber-700 border border-amber-500/30 dark:text-amber-300'
                     : 'text-muted-foreground hover:text-foreground'
                 }`}
               >
-                <Flame className="size-3 text-amber-500" /> Active Now (
-                {listings.filter((l) => l.status === 'active').length})
+                <Flame className="size-3 text-amber-500" /> Available (
+                {listings.filter((l) => l.status === 'active' || l.status === 'available').length})
               </button>
 
               <button
-                onClick={() => setActiveTab('claimed')}
+                onClick={() => setActiveTab('reserved')}
                 className={`px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all whitespace-nowrap flex items-center gap-1.5 cursor-pointer ${
-                  activeTab === 'claimed'
+                  activeTab === 'reserved'
                     ? 'bg-blue-500/15 text-blue-700 border border-blue-500/30 dark:text-blue-300'
                     : 'text-muted-foreground hover:text-foreground'
                 }`}
               >
-                <Clock className="size-3 text-blue-500" /> Claimed (
-                {listings.filter((l) => l.status === 'claimed').length})
+                <Clock className="size-3 text-blue-500" /> Reserved (
+                {listings.filter((l) => l.status === 'claimed' || l.status === 'reserved').length})
               </button>
 
               <button
@@ -380,6 +409,18 @@ export function RestaurantDashboard() {
               >
                 <CheckCircle2 className="size-3 text-emerald-600" /> Collected (
                 {listings.filter((l) => l.status === 'collected').length})
+              </button>
+
+              <button
+                onClick={() => setActiveTab('expired')}
+                className={`px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all whitespace-nowrap flex items-center gap-1.5 cursor-pointer ${
+                  activeTab === 'expired'
+                    ? 'bg-destructive/15 text-destructive border border-destructive/30'
+                    : 'text-muted-foreground hover:text-foreground'
+                }`}
+              >
+                <AlertCircle className="size-3 text-destructive" /> Expired (
+                {listings.filter((l) => l.status === 'expired').length})
               </button>
             </div>
 
@@ -451,19 +492,24 @@ export function RestaurantDashboard() {
                       <span className="text-[11px] font-bold uppercase tracking-wider text-primary bg-primary/10 px-2.5 py-0.5 rounded-full">
                         {item.category}
                       </span>
-                      {item.status === 'active' && (
+                      {(item.status === 'active' || item.status === 'available') && (
                         <span className="inline-flex items-center gap-1 text-[11px] font-bold text-amber-700 bg-amber-500/15 border border-amber-500/30 px-2.5 py-0.5 rounded-full dark:text-amber-300">
-                          <Flame className="size-3 animate-pulse" /> Active
+                          <Flame className="size-3 animate-pulse" /> Available
                         </span>
                       )}
-                      {item.status === 'claimed' && (
+                      {(item.status === 'claimed' || item.status === 'reserved') && (
                         <span className="inline-flex items-center gap-1 text-[11px] font-bold text-blue-700 bg-blue-500/15 border border-blue-500/30 px-2.5 py-0.5 rounded-full dark:text-blue-300">
-                          <Clock className="size-3" /> Claimed
+                          <Clock className="size-3" /> Reserved
                         </span>
                       )}
                       {item.status === 'collected' && (
                         <span className="inline-flex items-center gap-1 text-[11px] font-bold text-emerald-700 bg-emerald-500/15 border border-emerald-500/30 px-2.5 py-0.5 rounded-full dark:text-emerald-300">
-                          <CheckCircle2 className="size-3" /> Rescued
+                          <CheckCircle2 className="size-3" /> Collected
+                        </span>
+                      )}
+                      {item.status === 'expired' && (
+                        <span className="inline-flex items-center gap-1 text-[11px] font-bold text-destructive bg-destructive/15 border border-destructive/30 px-2.5 py-0.5 rounded-full">
+                          <AlertCircle className="size-3" /> Expired
                         </span>
                       )}
                     </div>
@@ -522,6 +568,14 @@ export function RestaurantDashboard() {
                       <Button
                         size="sm"
                         variant="outline"
+                        onClick={() => setEditingListing(item)}
+                        className="h-8 px-3 text-xs gap-1 border-primary/30 hover:bg-primary/10 text-primary"
+                      >
+                        <Edit3 className="size-3.5" /> Edit
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="outline"
                         onClick={() => setSelectedListing(item)}
                         className="h-8 px-3 text-xs gap-1"
                       >
@@ -573,19 +627,24 @@ export function RestaurantDashboard() {
                           </div>
                         </td>
                         <td className="px-4 py-4">
-                          {item.status === 'active' && (
+                          {(item.status === 'active' || item.status === 'available') && (
                             <span className="inline-flex items-center gap-1 text-xs font-bold text-amber-700 bg-amber-500/15 border border-amber-500/30 px-2.5 py-0.5 rounded-full dark:text-amber-300">
-                              Active
+                              Available
                             </span>
                           )}
-                          {item.status === 'claimed' && (
+                          {(item.status === 'claimed' || item.status === 'reserved') && (
                             <span className="inline-flex items-center gap-1 text-xs font-bold text-blue-700 bg-blue-500/15 border border-blue-500/30 px-2.5 py-0.5 rounded-full dark:text-blue-300">
-                              Claimed
+                              Reserved
                             </span>
                           )}
                           {item.status === 'collected' && (
                             <span className="inline-flex items-center gap-1 text-xs font-bold text-emerald-700 bg-emerald-500/15 border border-emerald-500/30 px-2.5 py-0.5 rounded-full dark:text-emerald-300">
                               Collected
+                            </span>
+                          )}
+                          {item.status === 'expired' && (
+                            <span className="inline-flex items-center gap-1 text-xs font-bold text-destructive bg-destructive/15 border border-destructive/30 px-2.5 py-0.5 rounded-full">
+                              Expired
                             </span>
                           )}
                         </td>
@@ -603,6 +662,14 @@ export function RestaurantDashboard() {
                                 Collect
                               </Button>
                             )}
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => setEditingListing(item)}
+                              className="h-8 px-2.5 text-xs gap-1 border-primary/30 hover:bg-primary/10 text-primary"
+                            >
+                              <Edit3 className="size-3.5" /> Edit
+                            </Button>
                             <Button
                               size="sm"
                               variant="outline"
@@ -741,6 +808,18 @@ export function RestaurantDashboard() {
         isOpen={!!selectedListing}
         onClose={() => setSelectedListing(null)}
         onMarkCollected={handleMarkCollected}
+        onEdit={(item) => setEditingListing(item)}
+      />
+
+      <DonationEditModal
+        listing={editingListing}
+        isOpen={!!editingListing}
+        onClose={() => setEditingListing(null)}
+        onSuccess={(updated) => {
+          setListings((prev) =>
+            prev.map((item) => (item.id === updated.id ? updated : item))
+          );
+        }}
       />
     </div>
   );

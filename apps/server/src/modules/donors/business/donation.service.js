@@ -140,6 +140,19 @@ export async function getDonationMetrics() {
   };
 }
 
+export async function getDonationById(id) {
+  try {
+    const item = await prisma.donation.findUnique({
+      where: { id },
+    });
+    if (item) return item;
+  } catch (err) {
+    const found = inMemoryDonations.find((item) => item.id === id);
+    if (found) return found;
+  }
+  throw new Error(`Donation listing ${id} not found.`);
+}
+
 export async function updateDonationStatus(id, status) {
   try {
     const updated = await prisma.donation.update({
@@ -154,5 +167,95 @@ export async function updateDonationStatus(id, status) {
       return found;
     }
     throw new Error(`Donation listing ${id} not found.`);
+  }
+}
+
+export async function updateDonation(id, payload) {
+  const updateData = {};
+
+  if (payload.title || payload.foodName) {
+    updateData.title = (payload.title || payload.foodName).trim();
+  }
+
+  if (payload.category) {
+    updateData.category = payload.category;
+  }
+
+  if (payload.portions !== undefined) {
+    const portionsNum = Number(payload.portions);
+    if (isNaN(portionsNum) || portionsNum <= 0) {
+      throw new Error('Validation Error: Number of portions must be greater than 0.');
+    }
+    updateData.portions = portionsNum;
+  }
+
+  if (payload.weightKg !== undefined || payload.estimatedWeight !== undefined) {
+    const weightNum = Number(payload.weightKg || payload.estimatedWeight);
+    if (isNaN(weightNum) || weightNum <= 0) {
+      throw new Error('Validation Error: Estimated weight must be greater than 0 kg.');
+    }
+    updateData.weightKg = weightNum;
+  }
+
+  if (payload.dietary !== undefined) {
+    updateData.dietary = Array.isArray(payload.dietary) ? payload.dietary : [payload.dietary];
+  }
+
+  if (payload.temperature !== undefined) {
+    updateData.temperature = payload.temperature;
+  }
+
+  if (payload.expiryTime) {
+    const expiryDate = new Date(payload.expiryTime);
+    if (isNaN(expiryDate.getTime()) || expiryDate <= new Date()) {
+      throw new Error('Validation Error: Expiry time must be in the future.');
+    }
+    updateData.expiryTime = expiryDate;
+  }
+
+  if (payload.pickupAddress !== undefined) {
+    updateData.pickupAddress = payload.pickupAddress.trim();
+  }
+
+  if (payload.contactNumber !== undefined) {
+    updateData.contactNumber = payload.contactNumber.trim();
+  }
+
+  if (payload.pickupNotes !== undefined) {
+    updateData.pickupNotes = payload.pickupNotes.trim();
+  }
+
+  try {
+    const updated = await prisma.donation.update({
+      where: { id },
+      data: updateData,
+    });
+    console.log('[db] Donation updated in NeonDB:', id);
+    return updated;
+  } catch (err) {
+    const found = inMemoryDonations.find((item) => item.id === id);
+    if (found) {
+      Object.assign(found, updateData, {
+        expiryTime: updateData.expiryTime ? updateData.expiryTime.toISOString() : found.expiryTime,
+      });
+      return found;
+    }
+    throw new Error(`Donation listing ${id} not found.`);
+  }
+}
+
+export async function deleteDonation(id) {
+  try {
+    const deleted = await prisma.donation.delete({
+      where: { id },
+    });
+    return deleted;
+  } catch (err) {
+    const index = inMemoryDonations.findIndex((item) => item.id === id);
+    if (index !== -1) {
+      const removed = inMemoryDonations.splice(index, 1);
+      return removed[0];
+    }
+    throw new Error(`Donation listing ${id} not found or could not be deleted.`);
   }
 }

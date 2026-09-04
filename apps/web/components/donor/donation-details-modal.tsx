@@ -14,6 +14,7 @@ import {
   Scale,
   Thermometer,
   Calendar,
+  Edit3,
 } from 'lucide-react';
 import { DietaryBadge } from './dietary-badge';
 import { Button } from '@/components/ui/button';
@@ -25,11 +26,13 @@ export interface FoodListing {
   portions: number;
   weightKg: number;
   dietary: string[];
-  status: 'active' | 'claimed' | 'collected';
+  status: 'active' | 'claimed' | 'collected' | 'expired' | 'available' | 'reserved';
   createdAt: string;
   expiresAt: string;
   temperature: string;
   pickupNotes: string;
+  pickupAddress?: string;
+  contactNumber?: string;
   claimedByCharity?: {
     name: string;
     type: string;
@@ -45,6 +48,7 @@ interface DonationDetailsModalProps {
   isOpen: boolean;
   onClose: () => void;
   onMarkCollected?: (id: string) => void;
+  onEdit?: (listing: FoodListing) => void;
 }
 
 export function DonationDetailsModal({
@@ -52,6 +56,7 @@ export function DonationDetailsModal({
   isOpen,
   onClose,
   onMarkCollected,
+  onEdit,
 }: DonationDetailsModalProps) {
   if (!isOpen || !listing) return null;
 
@@ -217,6 +222,18 @@ export function DonationDetailsModal({
             <Calendar className="size-3.5" /> Published {listing.createdAt}
           </span>
           <div className="flex items-center gap-3">
+            {onEdit && (
+              <Button
+                variant="outline"
+                onClick={() => {
+                  onClose();
+                  onEdit(listing);
+                }}
+                className="gap-1.5 border-primary/30 hover:bg-primary/10 text-primary font-semibold text-xs h-9 px-3.5"
+              >
+                <Edit3 className="size-3.5" /> Edit Details
+              </Button>
+            )}
             {listing.status === 'claimed' && onMarkCollected && (
               <Button
                 onClick={() => {
