@@ -1,0 +1,93 @@
+name: Deploy backend to Azure App Service
+
+on:
+  push:
+    branches: [master]
+    paths:
+      - 'apps/server/**'
+      - 'Dockerfile'
+      - '.dockerignore'
+      - 'pnpm-lock.yaml'
+      - 'pnpm-workspace.yaml'
+      - '.github/workflows/deploy-backend.yml'
+  workflow_dispatch:
+
+concurrency:
+  group: backend-deploy
+  cancel-in-progress: true
+
+env:
+  IMAGE: ${{ vars.AZURE_REGISTRY }}.azurecr.io/share-a-plate/server
+
+jobs:
+  build-and-deploy:
+    name: Build image, push to ACR, deploy to App Service
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Azure login
+        uses: azure/login@v2
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+
+      - name: Build and push container image
+        env:
+          ACR: ${{ vars.AZURE_REGISTRY }}
+        run: |
+          USERNAME=$(az acr credential show --name "$ACR" --query username -o tsv)
+          PASSWORD=$(az acr credential show --name "$ACR" --query "passwords[0].value" -o tsv)
+          echo "$PASSWORD" | docker login "$ACR.azurecr.io" -u "$USERNAME" --password-stdin
+          docker build -t "${{ env.IMAGE }}:latest" -t "${{ env.IMAGE }}:${{ github.sha }}" .
+          docker push "${{ env.IMAGE }}:latest"
+          docker push "${{ env.IMAGE }}:${{ github.sha }}"
+
+      - name: Deploy to Azure App Service
+        env:
+          RG: ${{ vars.AZURE_RESOURCE_GROUP }}
+          WEBAPP: ${{ vars.AZURE_WEBAPP_NAME }}
+        run: |
+          az webapp config container set \
+            --name "$WEBAPP" \
+            --resource-group "$RG" \
+            --container-image-name "${{ env.IMAGE }}:latest" \
+            --container-registry-url "https://${{ vars.AZURE_REGISTRY }}.azurecr.io"
+
+      - name: Sync app settings
+        env:
+          RG: ${{ vars.AZURE_RESOURCE_GROUP }}
+          WEBAPP: ${{ vars.AZURE_WEBAPP_NAME }}
+        run: |
+          az webapp config appsettings set \
+            --name "$WEBAPP" \
+            --resource-group "$RG" \
+            --settings \
+              DATABASE_URL="${{ secrets.DATABASE_URL }}" \
+              DIRECT_URL="${{ secrets.DIRECT_URL }}" \
+              CLERK_SECRET_KEY="${{ secrets.CLERK_SECRET_KEY }}" \
+              NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY="${{ secrets.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY }}" \
+              CORS_ORIGIN="${{ secrets.CORS_ORIGIN }}"
+
+      - name: Restart App Service
+        env:
+          RG: ${{ vars.AZURE_RESOURCE_GROUP }}
+          WEBAPP: ${{ vars.AZURE_WEBAPP_NAME }}
+        run: az webapp restart --name "$WEBAPP" --resource-group "$RG"
+
+      - name: Wait for health endpoint
+        env:
+          WEBAPP: ${{ vars.AZURE_WEBAPP_NAME }}
+        run: |
+          url="https://${WEBAPP}.azurewebsites.net/api/health"
+          for i in $(seq 1 30); do
+            code=$(curl -s -o /dev/null -w "%{http_code}" "$url" || true)
+            if [ "$code" = "200" ]; then
+              echo "API is healthy at $url"
+              exit 0
+            fi
+            echo "waiting for $url (attempt $i)..."
+            sleep 10
+          done
+          echo "API did not become healthy in time" >&2
+          exit 1

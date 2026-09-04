@@ -1,0 +1,19 @@
+# Build context exclusions for the backend container (repo root context).
+
+.git
+.github
+
+**/node_modules
+**/.next
+**/out
+**/dist
+**/.turbo
+
+**/.env
+**/.env.*
+!**/.env.example
+
+.vercel
+.agents
+.DS_Store
+*.log

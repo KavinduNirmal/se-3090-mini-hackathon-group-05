@@ -151,3 +151,6 @@ vite.config.ts.timestamp-*
 .vite/
 .vscode
 .env
+
+# Vercel CLI local project link (contains org/project ids, not secrets)
+.vercel
