@@ -60,7 +60,15 @@ function SignInForm() {
     setPending(false);
 
     if (signInError) {
-      setError(signInError.message);
+      if (signInError.code === 'form_identifier_not_found') {
+        setError(
+          "No account exists for this email on Share a Plate. Double-check the address or create an account first.",
+        );
+      } else if (signInError.code === 'form_password_incorrect') {
+        setError('Incorrect password. Please try again.');
+      } else {
+        setError(signInError.message);
+      }
       return;
     }
 
