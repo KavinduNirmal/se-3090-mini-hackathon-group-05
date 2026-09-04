@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import { ArrowRight, HeartHandshake, Leaf, ShieldCheck, Sprout, Store } from 'lucide-react';
 
+import { AuthNav } from '@/components/auth-nav';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 
@@ -21,14 +22,7 @@ export default function HomePage() {
           </span>
           Share a Plate
         </Link>
-        <nav className="flex items-center gap-3">
-          <Button asChild variant="ghost" size="sm">
-            <Link href="/sign-in">Sign in</Link>
-          </Button>
-          <Button asChild size="sm">
-            <Link href="/sign-up">Get started</Link>
-          </Button>
-        </nav>
+        <AuthNav />
       </header>
 
       <section className="mx-auto grid w-full max-w-6xl gap-12 px-6 pb-20 pt-10 lg:grid-cols-2 lg:items-center lg:pt-16">

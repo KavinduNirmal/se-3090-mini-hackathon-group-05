@@ -16,4 +16,6 @@ export const env = Object.freeze({
   databaseUrl: process.env.DATABASE_URL,
   directUrl: process.env.DIRECT_URL,
   corsOrigin: process.env.CORS_ORIGIN ?? '*',
+  clerkSecretKey: process.env.CLERK_SECRET_KEY,
+  clerkPublishableKey: process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY,
 });

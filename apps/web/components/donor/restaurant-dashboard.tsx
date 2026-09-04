@@ -27,6 +27,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
+import { AuthNav } from '@/components/auth-nav';
 import { DietaryBadge } from './dietary-badge';
 import { DonationFormModal, NewDonationData } from './donation-form-modal';
 import { DonationDetailsModal, FoodListing } from './donation-details-modal';
@@ -257,6 +258,8 @@ export function RestaurantDashboard() {
                 <span>Create Donation</span>
               </Link>
             </Button>
+
+            <AuthNav />
           </div>
         </div>
       </header>
