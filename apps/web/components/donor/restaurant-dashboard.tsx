@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import Link from 'next/link';
 import {
   PackageCheck,
@@ -32,6 +32,7 @@ import { DietaryBadge } from './dietary-badge';
 import { DonationFormModal, NewDonationData } from './donation-form-modal';
 import { DonationDetailsModal, FoodListing } from './donation-details-modal';
 import { toast } from 'sonner';
+import { fetchDonations, updateDonationStatusApi } from '@/lib/api/donations';
 
 // Initial realistic mock data for Sri Lankan hospitality donor
 const INITIAL_LISTINGS: FoodListing[] = [
@@ -152,6 +153,17 @@ export function RestaurantDashboard() {
   // Modals state
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [selectedListing, setSelectedListing] = useState<FoodListing | null>(null);
+
+  // Fetch backend data on mount
+  useEffect(() => {
+    async function loadData() {
+      const serverItems = await fetchDonations();
+      if (serverItems && Array.isArray(serverItems) && serverItems.length > 0) {
+        setListings(serverItems);
+      }
+    }
+    loadData();
+  }, []);
 
   // Dynamic Metrics Calculation (Strictly fulfilling prompt requirements)
   const metrics = useMemo(() => {
