@@ -4,7 +4,7 @@ import * as React from 'react';
 import { useAuth, useSignUp, useUser } from '@clerk/nextjs';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { ArrowLeft, ArrowRight, Check, HeartHandshake, Leaf, LoaderCircle, Store } from 'lucide-react';
+import { ArrowLeft, ArrowRight, Check, HeartHandshake, Leaf, LoaderCircle, ShieldCheck, Store } from 'lucide-react';
 
 import { cn } from '@/lib/utils';
 import { ACCOUNT_TYPES, ACCOUNT_TYPE_LIST, homeForRole, isUserRole, type UserRole } from '@/lib/account-types';
@@ -24,6 +24,7 @@ const ROLE_META: Record<
 > = {
   donor: { icon: Store, tone: 'primary' },
   charity: { icon: HeartHandshake, tone: 'secondary' },
+  admin: { icon: ShieldCheck, tone: 'primary' },
 };
 
 function SignUpScreen() {
@@ -81,7 +82,7 @@ function SignUpScreen() {
       lastName,
       unsafeMetadata: {
         role,
-        orgName: organization,
+        ...(organization ? { orgName: organization } : {}),
       },
     });
     setPending(false);
@@ -278,6 +279,21 @@ function SignUpScreen() {
                 Sign in
               </Link>
             </p>
+
+            <p className="mt-4 border-t border-border pt-4 text-center text-xs text-muted-foreground/80">
+              <button
+                type="button"
+                onClick={() => {
+                  setError(null);
+                  setRole('admin');
+                  setStep('details');
+                }}
+                className="inline-flex items-center gap-1.5 underline-offset-2 hover:text-foreground hover:underline"
+              >
+                <ShieldCheck className="size-3.5" />
+                Share a Plate team? Create an admin account
+              </button>
+            </p>
           </CardContent>
         </Card>
       ) : null}
@@ -335,14 +351,16 @@ function SignUpScreen() {
                 </div>
               </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="organization">{activeType.orgLabel}</Label>
-                <Input
-                  id="organization"
-                  name="organization"
-                  placeholder={activeType.orgPlaceholder}
-                />
-              </div>
+              {activeType.orgLabel ? (
+                <div className="space-y-2">
+                  <Label htmlFor="organization">{activeType.orgLabel}</Label>
+                  <Input
+                    id="organization"
+                    name="organization"
+                    placeholder={activeType.orgPlaceholder}
+                  />
+                </div>
+              ) : null}
 
               <div className="space-y-2">
                 <Label htmlFor="email">Email address</Label>

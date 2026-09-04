@@ -1,4 +1,4 @@
-export type UserRole = 'donor' | 'charity';
+export type UserRole = 'donor' | 'charity' | 'admin';
 
 export type AccountType = {
   role: UserRole;
@@ -34,16 +34,50 @@ export const ACCOUNT_TYPES: Record<UserRole, AccountType> = {
     orgPlaceholder: 'e.g. Little Hearts Children’s Home',
     value: 'charity',
   },
+  admin: {
+    role: 'admin',
+    label: 'Team Admin',
+    headline: 'Share a Plate operations team',
+    description:
+      'Manage the platform: verify suppliers and charities, monitor donations and review impact.',
+    examples: [],
+    orgLabel: '',
+    orgPlaceholder: '',
+    value: 'admin',
+  },
 };
 
 export const ACCOUNT_TYPE_LIST: AccountType[] = [ACCOUNT_TYPES.donor, ACCOUNT_TYPES.charity];
 
 export function isUserRole(value: unknown): value is UserRole {
-  return value === 'donor' || value === 'charity';
+  return value === 'donor' || value === 'charity' || value === 'admin';
 }
 
 export function homeForRole(role: UserRole | null | undefined): string {
-  if (role === 'charity') return '/charity';
   if (role === 'donor') return '/donor';
+  if (role === 'charity') return '/charity';
+  if (role === 'admin') return '/admin/dashboard';
   return '/';
+}
+
+const AUTH_PATHS = ['/sign-in', '/sign-up', '/role'];
+
+/**
+ * Where to send a user right after authentication.
+ * 1. Honours a safe internal `redirect_url` (e.g. the page that triggered sign-in).
+ * 2. Otherwise falls back to the user's role home.
+ */
+export function resolvePostAuthDestination(
+  redirectUrl: string | null,
+  role: UserRole | null,
+): string {
+  if (
+    redirectUrl &&
+    redirectUrl.startsWith('/') &&
+    !redirectUrl.startsWith('//') &&
+    !AUTH_PATHS.some((path) => redirectUrl === path || redirectUrl.startsWith(`${path}?`))
+  ) {
+    return redirectUrl;
+  }
+  return homeForRole(role);
 }

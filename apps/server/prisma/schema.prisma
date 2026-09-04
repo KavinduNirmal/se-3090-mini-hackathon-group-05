@@ -1,4 +1,4 @@
-// Prisma schema for the Bhoomi-Ape modular monolith.
+// Prisma schema for the Share a Plate modular monolith.
 // NeonDB (Postgres) is the only datasource.
 
 generator client {

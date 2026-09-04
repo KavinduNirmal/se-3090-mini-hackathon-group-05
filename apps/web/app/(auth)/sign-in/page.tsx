@@ -6,7 +6,7 @@ import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { ArrowRight, LoaderCircle, Leaf } from 'lucide-react';
 
-import { homeForRole, type UserRole } from '@/lib/account-types';
+import { isUserRole, resolvePostAuthDestination, type UserRole } from '@/lib/account-types';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -14,27 +14,33 @@ import { Label } from '@/components/ui/label';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Separator } from '@/components/ui/separator';
 
+function roleFromUser(user: { unsafeMetadata?: unknown; publicMetadata?: unknown } | null | undefined): UserRole | null {
+  const unsafe = (user?.unsafeMetadata ?? {}) as { role?: unknown };
+  const pub = (user?.publicMetadata ?? {}) as { role?: unknown };
+  const role = unsafe.role ?? pub.role;
+  return isUserRole(role) ? role : null;
+}
+
 function SignInForm() {
   const { signIn, errors, fetchStatus } = useSignIn();
   const { isLoaded, isSignedIn } = useAuth();
-  const { user } = useUser();
+  const { isLoaded: userLoaded, user } = useUser();
   const router = useRouter();
   const searchParams = useSearchParams();
   const redirectUrl = searchParams.get('redirect_url');
+  const role = roleFromUser(user);
 
   const [pending, setPending] = React.useState(false);
   const [error, setError] = React.useState<string | null>(null);
 
   const redirecting = React.useRef(false);
 
+  // Route users to the page they originally requested, or to their role home.
   React.useEffect(() => {
-    if (isLoaded && isSignedIn && !redirecting.current) {
-      redirecting.current = true;
-      const userRole = user?.unsafeMetadata?.role as UserRole | undefined;
-      const destination = redirectUrl || homeForRole(userRole);
-      router.replace(destination);
-    }
-  }, [isLoaded, isSignedIn, user, redirectUrl, router]);
+    if (!isLoaded || !userLoaded || !isSignedIn || redirecting.current) return;
+    redirecting.current = true;
+    router.replace(resolvePostAuthDestination(redirectUrl, role));
+  }, [isLoaded, userLoaded, isSignedIn, role, redirectUrl, router]);
 
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -64,15 +70,9 @@ function SignInForm() {
     }
 
     setPending(true);
-    const userRole = user?.unsafeMetadata?.role as UserRole | undefined;
-    const targetUrl = redirectUrl || homeForRole(userRole);
-    const { error: finalizeError } = await signIn.finalize({
-      navigate: ({ decorateUrl }) => {
-        const url = decorateUrl(targetUrl);
-        if (url.startsWith('http')) window.location.assign(url);
-        else router.push(url);
-      },
-    });
+    // Activate the session without leaving the page; the effect above routes
+    // the user to their original destination or role home once the user loads.
+    const { error: finalizeError } = await signIn.finalize({ navigate: () => {} });
     setPending(false);
 
     if (finalizeError) {

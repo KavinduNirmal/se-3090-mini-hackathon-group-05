@@ -1,18 +1,11 @@
-import { redirect } from 'next/navigation';
 import Link from 'next/link';
-import { HeartHandshake, Leaf } from 'lucide-react';
+import { Leaf, ShieldCheck } from 'lucide-react';
 
-import { getRole } from '@/lib/server/session';
 import { AuthNav } from '@/components/auth-nav';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 
-export const dynamic = 'force-dynamic';
-
-export default async function CharityPortalPage() {
-  const role = await getRole('/charity');
-  if (role !== 'charity') redirect('/');
-
+export default function AdminDashboardPage() {
   return (
     <main className="mx-auto flex min-h-dvh w-full max-w-6xl flex-col px-6 py-8">
       <header className="flex items-center justify-between">
@@ -23,17 +16,18 @@ export default async function CharityPortalPage() {
           Share a Plate
         </Link>
         <div className="flex items-center gap-3">
-          <Badge variant="secondary" className="gap-1.5">
-            <HeartHandshake className="size-3.5" /> Food Requester
+          <Badge variant="default" className="gap-1.5">
+            <ShieldCheck className="size-3.5" /> Admin
           </Badge>
           <AuthNav />
         </div>
       </header>
 
       <section className="flex flex-1 flex-col items-center justify-center py-20 text-center">
-        <h1 className="text-3xl font-extrabold tracking-[-0.02em]">Charity portal</h1>
+        <h1 className="text-3xl font-extrabold tracking-[-0.02em]">Admin dashboard</h1>
         <p className="mt-3 max-w-md text-muted-foreground">
-          Your live rescue feed, reservations and pickup confirmations are being built here.
+          Impact analytics, restaurant &amp; charity verification, and donation monitoring will be
+          built here.
         </p>
         <Button asChild variant="outline" className="mt-6">
           <Link href="/">Back to home</Link>
