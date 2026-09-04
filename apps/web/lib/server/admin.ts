@@ -44,6 +44,53 @@ export interface AdminCharity {
   updatedAt: string;
 }
 
+export interface AdminRestaurant {
+  id: string;
+  clerkUserId: string | null;
+  name: string;
+  type: string;
+  address: string | null;
+  city: string | null;
+  phone: string | null;
+  licenseNo: string | null;
+  hygieneRating: number | null;
+  verified: boolean;
+  status: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface AdminClaim {
+  name?: string;
+  type?: string | null;
+  verified?: boolean;
+  contactName?: string | null;
+  phone?: string | null;
+}
+
+export interface AdminDonation {
+  id: string;
+  donorId: string | null;
+  donorName: string;
+  title: string;
+  category: string;
+  portions: number;
+  weightKg: number;
+  dietary: string[];
+  status: string;
+  temperature: string | null;
+  preparedTime: string | null;
+  expiryTime: string;
+  pickupAddress: string;
+  contactNumber: string;
+  pickupNotes: string | null;
+  claimedByCharity: AdminClaim | null;
+  flagged: boolean;
+  flagReason: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
 export class AdminApiError extends Error {
   constructor(
     message: string,
@@ -106,4 +153,20 @@ export async function listCharities(options: { status?: string; q?: string } = {
   if (options.q) params.set('q', options.q);
   const qs = params.toString();
   return adminFetch<AdminCharity[]>(`/charities${qs ? `?${qs}` : ''}`);
+}
+
+export async function listRestaurants(options: { status?: string; q?: string } = {}): Promise<AdminRestaurant[]> {
+  const params = new URLSearchParams();
+  if (options.status) params.set('status', options.status);
+  if (options.q) params.set('q', options.q);
+  const qs = params.toString();
+  return adminFetch<AdminRestaurant[]>(`/restaurants${qs ? `?${qs}` : ''}`);
+}
+
+export async function listDonations(options: { status?: string; flagged?: 'true' | 'false' } = {}): Promise<AdminDonation[]> {
+  const params = new URLSearchParams();
+  if (options.status) params.set('status', options.status);
+  if (options.flagged) params.set('flagged', options.flagged);
+  const qs = params.toString();
+  return adminFetch<AdminDonation[]>(`/donations${qs ? `?${qs}` : ''}`);
 }
