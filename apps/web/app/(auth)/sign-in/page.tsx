@@ -42,6 +42,24 @@ function SignInForm() {
     router.replace(resolvePostAuthDestination(redirectUrl, role));
   }, [isLoaded, userLoaded, isSignedIn, role, redirectUrl, router]);
 
+  function friendlyError(err: { code?: string; message?: string } | null | undefined): string {
+    switch (err?.code) {
+      case 'form_identifier_not_found':
+        return 'No account exists for this email on Share a Plate. Double-check the address or create an account first.';
+      case 'form_password_incorrect':
+        return 'Incorrect password. Please try again.';
+      default:
+        return err?.message ?? 'Something went wrong. Please try again.';
+    }
+  }
+
+  function strategyLabel(strategy: string): string {
+    if (strategy === 'oauth_google') return 'Google';
+    if (strategy === 'password') return 'password';
+    if (strategy === 'ticket') return 'email magic link';
+    return strategy;
+  }
+
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setError(null);
@@ -56,36 +74,55 @@ function SignInForm() {
     }
 
     setPending(true);
-    const { error: signInError } = await signIn.password({ identifier, password });
-    setPending(false);
 
-    if (signInError) {
-      if (signInError.code === 'form_identifier_not_found') {
-        setError(
-          "No account exists for this email on Share a Plate. Double-check the address or create an account first.",
-        );
-      } else if (signInError.code === 'form_password_incorrect') {
-        setError('Incorrect password. Please try again.');
-      } else {
-        setError(signInError.message);
-      }
+    // 1. Start a sign-in attempt for the identifier so we can see which
+    //    first-factor strategies the Clerk application actually offers.
+    const { error: createError } = await signIn.create({ identifier });
+    if (createError) {
+      setPending(false);
+      setError(friendlyError(createError));
+      return;
+    }
+
+    // 2. If this Clerk app has not enabled password sign-in, tell the user
+    //    exactly that instead of a misleading "additional verification" error.
+    const factors = signIn.supportedFirstFactors ?? [];
+    const hasPasswordFactor = factors.some((factor) => factor.strategy === 'password');
+    if (!hasPasswordFactor) {
+      setPending(false);
+      const options =
+        factors.length > 0
+          ? factors.map((factor) => strategyLabel(factor.strategy)).join(', ')
+          : 'none';
+      setError(
+        `Password sign-in is not enabled on this account's app (available sign-in methods: ${options}). ` +
+          'Enable “Email + Password” under Clerk → User & Authentication, or use Google to sign in.',
+      );
+      return;
+    }
+
+    // 3. Submit the password for the sign-in that create() already set up.
+    const { error: passwordError } = await signIn.password({ password });
+    if (passwordError) {
+      setPending(false);
+      setError(friendlyError(passwordError));
       return;
     }
 
     if (signIn.status !== 'complete') {
-      setError('Additional verification is required. Please try again or contact support.');
+      setPending(false);
+      const mfa =
+        (signIn.supportedSecondFactors?.length ?? 0) > 0
+          ? ' Two-factor verification is required for this account.'
+          : '';
+      setError(`Sign-in could not be completed.${mfa} Please try again or contact support.`);
       return;
     }
 
-    setPending(true);
-    // Activate the session without leaving the page; the effect above routes
-    // the user to their original destination or role home once the user loads.
-    const { error: finalizeError } = await signIn.finalize({ navigate: () => {} });
+    // 4. Activate the created session without leaving the page; the effect
+    //    above routes the user to their destination once the user loads.
+    await signIn.finalize({ navigate: () => {} });
     setPending(false);
-
-    if (finalizeError) {
-      setError(finalizeError.message);
-    }
   }
 
   if (!isLoaded) {
