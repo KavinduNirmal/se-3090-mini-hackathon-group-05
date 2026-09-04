@@ -1,0 +1,7 @@
+# Server environment (gitignored — do not commit)
+DATABASE_URL="postgresql://neondb_owner:npg_DbSMY2CtZw4L@ep-still-leaf-b323i1z8-pooler.c-4.ap-southeast-1.aws.neon.tech/neondb?sslmode=require"
+DIRECT_URL="postgresql://neondb_owner:npg_DbSMY2CtZw4L@ep-still-leaf-b323i1z8.c-4.ap-southeast-1.aws.neon.tech/neondb?sslmode=require"
+
+PORT=4000
+NODE_ENV=development
+CORS_ORIGIN=http://localhost:3000

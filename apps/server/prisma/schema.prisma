@@ -12,3 +12,171 @@ datasource db {
   url       = env("DATABASE_URL")
   directUrl = env("DIRECT_URL")
 }
+
+enum Role {
+  DONOR
+  CHARITY
+  ADMIN
+}
+
+enum UserStatus {
+  ACTIVE
+  PENDING_VERIFICATION
+  SUSPENDED
+}
+
+enum DonorType {
+  RESTAURANT
+  HOTEL
+  BAKERY
+  SUPERMARKET
+  BANQUET
+  INDIVIDUAL
+  OTHER
+}
+
+enum CharityType {
+  ORPHANAGE
+  ELDER_CARE
+  COMMUNITY_KITCHEN
+  SHELTER
+  NGO_HUB
+  OTHER
+}
+
+enum FoodCategory {
+  RICE_CURRY
+  BAKERY_PASTRIES
+  COOKED_MEALS
+  PACKAGED_FOOD
+  SNACKS_BEVERAGES
+  FRUITS_VEGETABLES
+  OTHER
+}
+
+enum DietaryType {
+  PURE_VEG
+  NON_VEG
+  HALAL
+  VEGAN
+}
+
+enum DonationStatus {
+  AVAILABLE
+  RESERVED
+  COLLECTED
+  EXPIRED
+}
+
+enum ReservationStatus {
+  REQUESTED
+  APPROVED
+  READY_FOR_PICKUP
+  COLLECTED
+  CANCELLED
+  EXPIRED
+}
+
+model User {
+  id           String          @id @default(uuid())
+  email        String          @unique
+  passwordHash String
+  role         Role
+  status       UserStatus      @default(ACTIVE)
+  createdAt    DateTime        @default(now())
+  updatedAt    DateTime        @updatedAt
+
+  donorProfile   DonorProfile?
+  charityProfile CharityProfile?
+
+  @@map("users")
+}
+
+model DonorProfile {
+  id                String         @id @default(uuid())
+  userId            String         @unique
+  user              User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  businessName      String
+  donorType         DonorType      @default(RESTAURANT)
+  contactPerson     String
+  phone             String
+  address           String
+  city              String
+  district          String?
+  regNumber         String?
+  isVerified        Boolean        @default(false)
+  hygieneCertified  Boolean        @default(false)
+  createdAt         DateTime       @default(now())
+  updatedAt         DateTime       @updatedAt
+
+  donations         FoodDonation[]
+
+  @@map("donor_profiles")
+}
+
+model CharityProfile {
+  id                String         @id @default(uuid())
+  userId            String         @unique
+  user              User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  orgName           String
+  charityType       CharityType    @default(SHELTER)
+  regNumber         String?
+  contactPerson     String
+  phone             String
+  address           String
+  city              String
+  district          String?
+  beneficiaryCount  Int?
+  isVerified        Boolean        @default(false)
+  createdAt         DateTime       @default(now())
+  updatedAt         DateTime       @updatedAt
+
+  reservations      Reservation[]
+
+  @@map("charity_profiles")
+}
+
+model FoodDonation {
+  id                  String         @id @default(uuid())
+  donorId             String
+  donor               DonorProfile   @relation(fields: [donorId], references: [id], onDelete: Cascade)
+  title               String
+  description         String?
+  category            FoodCategory   @default(COOKED_MEALS)
+  dietaryType         DietaryType    @default(NON_VEG)
+  portions            Int
+  estimatedWeightKg   Float?
+  preparedTime        DateTime       @default(now())
+  expiryTime          DateTime
+  pickupAddress       String
+  city                String
+  district            String?
+  contactNumber       String
+  storageInstructions String?
+  status              DonationStatus @default(AVAILABLE)
+  createdAt           DateTime       @default(now())
+  updatedAt           DateTime       @updatedAt
+
+  reservations        Reservation[]
+
+  @@map("food_donations")
+}
+
+model Reservation {
+  id                 String            @id @default(uuid())
+  donationId         String
+  donation           FoodDonation      @relation(fields: [donationId], references: [id], onDelete: Cascade)
+  charityId          String
+  charity            CharityProfile    @relation(fields: [charityId], references: [id], onDelete: Cascade)
+  portionsRequested  Int
+  status             ReservationStatus @default(REQUESTED)
+  verificationCode   String
+  pickupEta          DateTime?
+  notes              String?
+  collectedAt        DateTime?
+  createdAt          DateTime          @default(now())
+  updatedAt          DateTime          @updatedAt
+
+  @@map("reservations")
+}
+

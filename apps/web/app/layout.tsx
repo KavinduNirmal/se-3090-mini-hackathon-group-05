@@ -3,9 +3,11 @@ import type { ReactNode } from 'react';
 import { Plus_Jakarta_Sans } from 'next/font/google';
 import { ClerkProvider } from '@clerk/nextjs';
 import { ThemeProvider } from '@/providers/theme-provider';
+import { AuthProvider } from '@/providers/authContext';
 import { Toaster } from '@/components/ui/sonner';
 
 import './globals.css';
+
 
 const plusJakarta = Plus_Jakarta_Sans({
   subsets: ['latin'],
@@ -33,9 +35,10 @@ export default function RootLayout({ children }: { children: ReactNode }) {
             enableSystem
             disableTransitionOnChange
           >
-            {children}
+            <AuthProvider>{children}</AuthProvider>
             <Toaster richColors position="top-center" />
           </ThemeProvider>
+
         </ClerkProvider>
       </body>
     </html>
