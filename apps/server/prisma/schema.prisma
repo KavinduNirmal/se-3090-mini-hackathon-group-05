@@ -12,23 +12,67 @@ datasource db {
   directUrl = env("DIRECT_URL")
 }
 
+model Restaurant {
+  id            String   @id @default(cuid())
+  clerkUserId   String?  @unique
+  name          String
+  type          String
+  address       String?
+  city          String?
+  phone         String?
+  licenseNo     String?
+  hygieneRating Int?
+  verified      Boolean  @default(false)
+  // "pending", "active", "suspended", "rejected"
+  status        String   @default("pending")
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@index([status])
+}
+
+model Charity {
+  id             String   @id @default(cuid())
+  clerkUserId    String?  @unique
+  name           String
+  type           String
+  address        String?
+  city           String?
+  phone          String?
+  registrationNo String?
+  verified       Boolean  @default(false)
+  // "pending", "active", "rejected"
+  status         String   @default("pending")
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  @@index([status])
+}
+
 model Donation {
-  id                  String    @id @default(cuid())
-  donorId             String?
-  donorName           String    @default("Cinnamon Grand Bakery & Buffet")
-  title               String
-  category            String
-  portions            Int
-  weightKg            Float
-  dietary             String[]  @default([])
-  status              String    @default("active") // "active", "claimed", "collected", "expired"
-  temperature         String?   @default("Hot-Held (>60°C)")
-  preparedTime        DateTime?
-  expiryTime          DateTime
-  pickupAddress       String
-  contactNumber       String
-  pickupNotes         String?
-  claimedByCharity    Json?
-  createdAt           DateTime  @default(now())
-  updatedAt           DateTime  @updatedAt
+  id               String    @id @default(cuid())
+  donorId          String?
+  donorName        String    @default("Cinnamon Grand Bakery & Buffet")
+  title            String
+  category         String
+  portions         Int
+  weightKg         Float
+  dietary          String[]  @default([])
+  // "active", "claimed", "collected", "expired", "removed"
+  status           String    @default("active")
+  temperature      String?   @default("Hot-Held (>60°C)")
+  preparedTime     DateTime?
+  expiryTime       DateTime
+  pickupAddress    String
+  contactNumber    String
+  pickupNotes      String?
+  claimedByCharity Json?
+  flagged          Boolean   @default(false)
+  flagReason       String?
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+
+  @@index([status])
+  @@index([category])
+  @@index([createdAt])
 }
