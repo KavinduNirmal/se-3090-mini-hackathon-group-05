@@ -34,115 +34,7 @@ import { DonationDetailsModal, FoodListing } from './donation-details-modal';
 import { toast } from 'sonner';
 import { fetchDonations, updateDonationStatusApi } from '@/lib/api/donations';
 
-// Initial realistic mock data for Sri Lankan hospitality donor
-const INITIAL_LISTINGS: FoodListing[] = [
-  {
-    id: 'LIST-101',
-    title: 'Surplus Sri Lankan Lunch Buffet Basmati & Curries',
-    category: 'Prepared Meals',
-    portions: 65,
-    weightKg: 26.5,
-    dietary: ['halal', 'non-veg'],
-    status: 'active',
-    createdAt: 'Today, 2:30 PM',
-    expiresAt: 'In 1h 45m (5:00 PM)',
-    temperature: 'Hot-Held (>60°C)',
-    pickupNotes: 'Kitchen Service Dock 3. Contact Executive Chef Perera.',
-  },
-  {
-    id: 'LIST-102',
-    title: 'Freshly Baked Artisanal Pastries & Ceylon Tea Buns',
-    category: 'Bakery & Pastry',
-    portions: 45,
-    weightKg: 12.0,
-    dietary: ['halal', 'pure-veg'],
-    status: 'active',
-    createdAt: 'Today, 3:15 PM',
-    expiresAt: 'In 2h 30m (6:00 PM)',
-    temperature: 'Room Temp (<2h)',
-    pickupNotes: 'Pastry Kitchen Rear Gate. Ask for Manager Suneth.',
-  },
-  {
-    id: 'LIST-103',
-    title: 'Vegetable Kottu & Steamed String Hoppers',
-    category: 'Prepared Meals',
-    portions: 40,
-    weightKg: 18.0,
-    dietary: ['halal', 'pure-veg'],
-    status: 'claimed',
-    createdAt: 'Today, 1:15 PM',
-    expiresAt: 'In 45m (4:30 PM)',
-    temperature: 'Thermal Sealed Box',
-    pickupNotes: 'Main Banquet Delivery Hub.',
-    claimedByCharity: {
-      name: 'Hope House Orphanage Colombo',
-      type: 'Children Community Care',
-      verified: true,
-      contactName: 'Sister Maria',
-      phone: '+94 77 123 4567',
-    },
-  },
-  {
-    id: 'LIST-104',
-    title: 'Seafood Fried Rice & Roasted Chilli Paste',
-    category: 'Prepared Meals',
-    portions: 50,
-    weightKg: 22.0,
-    dietary: ['halal', 'non-veg'],
-    status: 'collected',
-    createdAt: 'Yesterday, 8:00 PM',
-    expiresAt: 'Collected at 9:15 PM',
-    temperature: 'Hot-Held (>60°C)',
-    pickupNotes: 'Loading Bay B',
-    claimedByCharity: {
-      name: 'Sri Lanka Red Cross Food Rescue',
-      type: 'Emergency Relief Hub',
-      verified: true,
-      contactName: 'Officer Kanishka',
-      phone: '+94 71 987 6543',
-    },
-  },
-  {
-    id: 'LIST-105',
-    title: 'Fresh Fruits Platter (Melon, Pineapple & Mango)',
-    category: 'Fresh Produce',
-    portions: 35,
-    weightKg: 15.5,
-    dietary: ['pure-veg'],
-    status: 'collected',
-    createdAt: 'Yesterday, 6:00 PM',
-    expiresAt: 'Collected at 7:30 PM',
-    temperature: 'Refrigerated (<4°C)',
-    pickupNotes: 'Cold Storage Pantry Gate A',
-    claimedByCharity: {
-      name: 'Elder Care Sanctuary Wellawatte',
-      type: 'Senior Care Home',
-      verified: true,
-      contactName: 'Dr. Wickramasinghe',
-      phone: '+94 76 555 4321',
-    },
-  },
-  {
-    id: 'LIST-106',
-    title: 'Gourmet Club Sandwiches & Savory Rolls',
-    category: 'Bakery & Pastry',
-    portions: 30,
-    weightKg: 8.5,
-    dietary: ['non-veg'],
-    status: 'collected',
-    createdAt: '2 days ago',
-    expiresAt: 'Collected at 8:45 PM',
-    temperature: 'Refrigerated (<4°C)',
-    pickupNotes: 'Main Pantry Dispatch',
-    claimedByCharity: {
-      name: 'Community Care Shelter Dematagoda',
-      type: 'Non-profit Feeding Center',
-      verified: true,
-      contactName: 'Pastor David',
-      phone: '+94 70 333 2211',
-    },
-  },
-];
+const INITIAL_LISTINGS: FoodListing[] = [];
 
 export function RestaurantDashboard() {
   const [listings, setListings] = useState<FoodListing[]>(INITIAL_LISTINGS);
@@ -158,8 +50,10 @@ export function RestaurantDashboard() {
   useEffect(() => {
     async function loadData() {
       const serverItems = await fetchDonations();
-      if (serverItems && Array.isArray(serverItems) && serverItems.length > 0) {
+      if (serverItems && Array.isArray(serverItems)) {
         setListings(serverItems);
+      } else {
+        setListings([]);
       }
     }
     loadData();
