@@ -6,6 +6,7 @@ import { UserButton, useAuth, useClerk } from '@clerk/nextjs';
 import { LogOut } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
+import { ThemeToggle } from '@/components/theme-toggle';
 
 export function AuthNav() {
   const { isLoaded, isSignedIn } = useAuth();
@@ -19,6 +20,7 @@ export function AuthNav() {
   if (!isSignedIn) {
     return (
       <nav className="flex items-center gap-3">
+        <ThemeToggle />
         <Button asChild variant="ghost" size="sm">
           <Link href="/sign-in">Sign in</Link>
         </Button>
@@ -31,6 +33,7 @@ export function AuthNav() {
 
   return (
     <nav className="flex items-center gap-2">
+      <ThemeToggle />
       <UserButton />
       <Button
         variant="ghost"

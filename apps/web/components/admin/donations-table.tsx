@@ -23,11 +23,24 @@ import { toast } from 'sonner';
 
 import type { AdminDonation } from '@/lib/server/admin';
 import { StatusBadge } from '@/components/admin/status-badge';
+import { SortableTh, type SortDir } from '@/components/admin/sortable-th';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000';
+
+const DONATION_SORTS: Record<string, (donation: AdminDonation) => string | number> = {
+  title: (d) => d.title.toLowerCase(),
+  donorName: (d) => d.donorName.toLowerCase(),
+  category: (d) => d.category.toLowerCase(),
+  portions: (d) => d.portions,
+  weightKg: (d) => d.weightKg,
+  status: (d) => d.status,
+  expiryTime: (d) => d.expiryTime,
+  flagged: (d) => (d.flagged ? 1 : 0),
+  createdAt: (d) => d.createdAt,
+};
 
 function formatWhen(iso: string) {
   return new Date(iso).toLocaleString('en-US', {
@@ -47,6 +60,26 @@ export function DonationsTable({ donations }: { donations: AdminDonation[] }) {
   const [flagReason, setFlagReason] = React.useState('');
   const [removeTarget, setRemoveTarget] = React.useState<AdminDonation | null>(null);
   const [busy, setBusy] = React.useState<string | null>(null);
+  const [sortKey, setSortKey] = React.useState('createdAt');
+  const [sortDir, setSortDir] = React.useState<SortDir>('desc');
+
+  const sorted = React.useMemo(() => {
+    const arr = [...donations];
+    const get = DONATION_SORTS[sortKey] ?? DONATION_SORTS.createdAt;
+    arr.sort((a, b) => {
+      const va = get(a);
+      const vb = get(b);
+      if (va < vb) return -1;
+      if (va > vb) return 1;
+      return 0;
+    });
+    return sortDir === 'asc' ? arr : arr.reverse();
+  }, [donations, sortKey, sortDir]);
+
+  function requestSort(key: string) {
+    setSortKey(key);
+    setSortDir((dir) => (sortKey === key && dir === 'asc' ? 'desc' : 'asc'));
+  }
 
   async function post(path: string, body?: Record<string, unknown>) {
     const token = await getToken();
@@ -120,17 +153,56 @@ export function DonationsTable({ donations }: { donations: AdminDonation[] }) {
           <table className="w-full min-w-[820px] text-sm">
             <thead>
               <tr className="border-b border-border bg-muted/40 text-left text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-                <th className="px-5 py-3">Listing</th>
-                <th className="px-4 py-3">Donor</th>
-                <th className="px-4 py-3">Quantity</th>
-                <th className="px-4 py-3">Status</th>
-                <th className="px-4 py-3">Pickup expiry</th>
-                <th className="px-4 py-3">Flag</th>
-                <th className="px-4 py-3 text-right">Actions</th>
+                <SortableTh
+                  label="Listing"
+                  sortKey="title"
+                  activeKey={sortKey}
+                  dir={sortDir}
+                  onSort={requestSort}
+                  className="px-5"
+                />
+                <SortableTh
+                  label="Donor"
+                  sortKey="donorName"
+                  activeKey={sortKey}
+                  dir={sortDir}
+                  onSort={requestSort}
+                />
+                <SortableTh
+                  label="Quantity"
+                  sortKey="weightKg"
+                  activeKey={sortKey}
+                  dir={sortDir}
+                  onSort={requestSort}
+                />
+                <SortableTh
+                  label="Status"
+                  sortKey="status"
+                  activeKey={sortKey}
+                  dir={sortDir}
+                  onSort={requestSort}
+                />
+                <SortableTh
+                  label="Pickup expiry"
+                  sortKey="expiryTime"
+                  activeKey={sortKey}
+                  dir={sortDir}
+                  onSort={requestSort}
+                />
+                <SortableTh
+                  label="Flag"
+                  sortKey="flagged"
+                  activeKey={sortKey}
+                  dir={sortDir}
+                  onSort={requestSort}
+                />
+                <th className="px-4 py-3 text-right text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                  Actions
+                </th>
               </tr>
             </thead>
             <tbody className="divide-y divide-border">
-              {donations.map((donation) => (
+              {sorted.map((donation) => (
                 <tr key={donation.id} className="transition-colors hover:bg-muted/30">
                   <td className="px-5 py-3.5">
                     <div className="flex items-center gap-3">

@@ -121,7 +121,14 @@ export async function apiRequest<T = any>(
     }));
 
     if (!res.ok) {
-      throw new Error(data.message || `Request failed with status ${res.status}`);
+      // The backend returns JSON errors; a non-JSON body (e.g. a 404 page from
+      // a host without the API) means NEXT_PUBLIC_API_URL is misconfigured.
+      const isMisrouted = data.message === 'Failed to parse response from server';
+      const base = data.message || `Request failed with status ${res.status}`;
+      const suffix = isMisrouted
+        ? ` (${res.status} for ${url}). Is NEXT_PUBLIC_API_URL (${API_BASE_URL}) pointing at the Express API server?`
+        : '';
+      throw new Error(`${base}${suffix}`);
     }
 
     return data;
