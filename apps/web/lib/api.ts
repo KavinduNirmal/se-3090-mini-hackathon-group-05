@@ -151,3 +151,35 @@ export const authApi = {
     });
   },
 };
+
+export const rescueApi = {
+  getDonation: async (id: string) => {
+    return apiRequest<{ donation: any }>(`/api/donations/${id}`, {
+      method: 'GET',
+    });
+  },
+
+  reserveDonation: async (id: string, payload: {
+    portionsRequested: number;
+    pickupEta?: string;
+    notes?: string;
+    charityName?: string;
+    charityId?: string;
+  }) => {
+    return apiRequest<{
+      reservation: any;
+      verificationCode: string;
+      message: string;
+    }>(`/api/donations/${id}/reserve`, {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    });
+  },
+
+  getReservation: async (id: string) => {
+    return apiRequest<{ reservation: any }>(`/api/donations/reservations/${id}`, {
+      method: 'GET',
+    });
+  },
+};
+

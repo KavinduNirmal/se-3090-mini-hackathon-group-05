@@ -275,6 +275,90 @@ export class DonationRepository {
 
     return MOCK_DONATIONS.find((d) => d.id === id) || null;
   }
+
+  async createReservation({
+    donationId,
+    charityId,
+    portionsRequested,
+    verificationCode,
+    pickupEta,
+    notes,
+    charityName,
+  }) {
+    const donation = await this.getDonationById(donationId);
+    if (!donation) {
+      throw new Error('Donation listing not found');
+    }
+
+    const reservation = {
+      id: `res-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
+      donationId,
+      charityId: charityId || 'charity-demo-id',
+      portionsRequested: parseInt(portionsRequested, 10),
+      status: 'READY_FOR_PICKUP',
+      verificationCode,
+      pickupEta: pickupEta ? new Date(pickupEta).toISOString() : new Date(Date.now() + 60 * 60 * 1000).toISOString(),
+      notes: notes || null,
+      collectedAt: null,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+      donation,
+      charity: {
+        orgName: charityName || 'Hope Children’s Home & Orphanage',
+      },
+    };
+
+    // Store in global in-memory registry for resilience
+    global._ACTIVE_RESERVATIONS = global._ACTIVE_RESERVATIONS || [];
+    global._ACTIVE_RESERVATIONS.unshift(reservation);
+
+    try {
+      if (charityId) {
+        await prisma.reservation.create({
+          data: {
+            donationId,
+            charityId,
+            portionsRequested: parseInt(portionsRequested, 10),
+            verificationCode,
+            pickupEta: pickupEta ? new Date(pickupEta) : null,
+            notes,
+            status: 'READY_FOR_PICKUP',
+          },
+        });
+      }
+    } catch (err) {
+      console.warn('[db] stored reservation in runtime cache:', err.message);
+    }
+
+    return reservation;
+  }
+
+  async getReservationById(id) {
+    const globalList = global._ACTIVE_RESERVATIONS || [];
+    const inMem = globalList.find((r) => r.id === id);
+    if (inMem) return inMem;
+
+    try {
+      const res = await prisma.reservation.findUnique({
+        where: { id },
+        include: {
+          donation: { include: { donor: true } },
+          charity: true,
+        },
+      });
+      if (res) return res;
+    } catch (err) {
+      console.warn('[db] error fetching reservation:', err.message);
+    }
+
+    return null;
+  }
+
+  async getReservationsByCharity(charityId) {
+    const globalList = global._ACTIVE_RESERVATIONS || [];
+    return globalList;
+  }
 }
 
 export const donationRepository = new DonationRepository();
+

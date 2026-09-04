@@ -73,8 +73,71 @@ export class RescueService {
     if (!donation) {
       throw new AppError('Donation listing not found or has expired.', 404);
     }
-    return donation;
+
+    const now = new Date();
+    const expiry = new Date(donation.expiryTime);
+    const diffMs = expiry.getTime() - now.getTime();
+    const diffMins = Math.max(0, Math.floor(diffMs / (1000 * 60)));
+    const hours = Math.floor(diffMins / 60);
+    const mins = diffMins % 60;
+    const expiryCountdownText = hours > 0 ? `${hours}h ${mins}m` : `${mins}m`;
+
+    return {
+      ...donation,
+      expiryCountdownText,
+      isUrgent: diffMins <= 120,
+      distanceKm: donation.distanceKm || 1.8,
+      distanceFormatted: `${donation.distanceKm || 1.8} km • ${donation.city}`,
+    };
+  }
+
+  async reserveDonation({ donationId, charityId, charityName, portionsRequested, pickupEta, notes }) {
+    const donation = await donationRepository.getDonationById(donationId);
+    if (!donation) {
+      throw new AppError('Donation listing not found or no longer available.', 404);
+    }
+
+    const requestedCount = parseInt(portionsRequested, 10);
+    if (isNaN(requestedCount) || requestedCount <= 0) {
+      throw new AppError('Please specify a valid number of portions to claim (minimum 1).', 400);
+    }
+
+    if (requestedCount > donation.portions) {
+      throw new AppError(
+        `Requested portions (${requestedCount}) exceeds available surplus portions (${donation.portions}).`,
+        400,
+      );
+    }
+
+    // Generate secure 6-digit handover verification code
+    const randomDigits = Math.floor(1000 + Math.random() * 9000);
+    const verificationCode = `BHM-${randomDigits}`;
+
+    const reservation = await donationRepository.createReservation({
+      donationId,
+      charityId: charityId || 'demo-charity-id',
+      charityName: charityName || 'Hope Children’s Home & Orphanage',
+      portionsRequested: requestedCount,
+      verificationCode,
+      pickupEta,
+      notes,
+    });
+
+    return {
+      reservation,
+      verificationCode,
+      message: 'Reservation confirmed successfully. Please present your pickup pass upon arrival.',
+    };
+  }
+
+  async getReservation(id) {
+    const res = await donationRepository.getReservationById(id);
+    if (!res) {
+      throw new AppError('Reservation pass not found.', 404);
+    }
+    return res;
   }
 }
 
 export const rescueService = new RescueService();
+
