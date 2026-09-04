@@ -35,9 +35,7 @@ export default function HomePage() {
             <span className="text-primary">Share the plate.</span>
           </h1>
           <p className="mt-5 max-w-md text-pretty text-lg text-muted-foreground">
-            Share a Plate connects restaurants, bakeries and hotels with verified children&apos;s
-            homes, shelters and charities — so today&apos;s surplus becomes someone&apos;s meal
-            tonight.
+            hello there
           </p>
 
           <div className="mt-8 grid gap-3 sm:grid-cols-2">
