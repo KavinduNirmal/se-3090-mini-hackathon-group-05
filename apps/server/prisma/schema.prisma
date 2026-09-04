@@ -1,0 +1,14 @@
+// Prisma schema for the Bhoomi-Ape modular monolith.
+// NeonDB (Postgres) is the only datasource. Connection config only:
+// domain models are added with each member module's implementation.
+
+generator client {
+  provider   = "prisma-client-js"
+  engineType = "client"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}

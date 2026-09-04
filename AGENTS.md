@@ -1,1 +1,1 @@
-reference ('/.agents.md')
+reference ('/.agents')
