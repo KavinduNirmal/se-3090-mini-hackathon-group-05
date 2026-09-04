@@ -355,10 +355,112 @@ export class DonationRepository {
   }
 
   async getReservationsByCharity(charityId) {
-    const globalList = global._ACTIVE_RESERVATIONS || [];
-    return globalList;
+    global._ACTIVE_RESERVATIONS = global._ACTIVE_RESERVATIONS || [
+      {
+        id: 'res-101',
+        donationId: 'don-001',
+        charityId: charityId || 'demo-charity-id',
+        portionsRequested: 35,
+        status: 'READY_FOR_PICKUP',
+        verificationCode: 'BHM-7824',
+        pickupEta: new Date(Date.now() + 45 * 60 * 1000).toISOString(),
+        notes: 'Volunteer arriving with insulated food boxes',
+        collectedAt: null,
+        createdAt: new Date(Date.now() - 30 * 60 * 1000).toISOString(),
+        updatedAt: new Date(Date.now() - 30 * 60 * 1000).toISOString(),
+        donation: MOCK_DONATIONS[0],
+        charity: { orgName: 'Hope Children’s Home & Orphanage' },
+      },
+      {
+        id: 'res-102',
+        donationId: 'don-002',
+        charityId: charityId || 'demo-charity-id',
+        portionsRequested: 25,
+        status: 'READY_FOR_PICKUP',
+        verificationCode: 'BHM-4109',
+        pickupEta: new Date(Date.now() + 90 * 60 * 1000).toISOString(),
+        notes: 'Three-wheeler pickup arranged',
+        collectedAt: null,
+        createdAt: new Date(Date.now() - 60 * 60 * 1000).toISOString(),
+        updatedAt: new Date(Date.now() - 60 * 60 * 1000).toISOString(),
+        donation: MOCK_DONATIONS[1],
+        charity: { orgName: 'Hope Children’s Home & Orphanage' },
+      },
+      {
+        id: 'res-103',
+        donationId: 'don-003',
+        charityId: charityId || 'demo-charity-id',
+        portionsRequested: 40,
+        status: 'COLLECTED',
+        verificationCode: 'BHM-9932',
+        pickupEta: new Date(Date.now() - 4 * 3600 * 1000).toISOString(),
+        notes: 'Collected by Brother Anthony',
+        collectedAt: new Date(Date.now() - 3 * 3600 * 1000).toISOString(),
+        createdAt: new Date(Date.now() - 5 * 3600 * 1000).toISOString(),
+        updatedAt: new Date(Date.now() - 3 * 3600 * 1000).toISOString(),
+        donation: MOCK_DONATIONS[2],
+        charity: { orgName: 'Hope Children’s Home & Orphanage' },
+      },
+      {
+        id: 'res-104',
+        donationId: 'don-005',
+        charityId: charityId || 'demo-charity-id',
+        portionsRequested: 30,
+        status: 'COLLECTED',
+        verificationCode: 'BHM-6120',
+        pickupEta: new Date(Date.now() - 24 * 3600 * 1000).toISOString(),
+        notes: 'Distributed to evening shelter residents',
+        collectedAt: new Date(Date.now() - 23 * 3600 * 1000).toISOString(),
+        createdAt: new Date(Date.now() - 25 * 3600 * 1000).toISOString(),
+        updatedAt: new Date(Date.now() - 23 * 3600 * 1000).toISOString(),
+        donation: MOCK_DONATIONS[4],
+        charity: { orgName: 'Hope Children’s Home & Orphanage' },
+      },
+    ];
+
+    try {
+      const dbReservations = await prisma.reservation.findMany({
+        where: charityId ? { charityId } : {},
+        include: {
+          donation: { include: { donor: true } },
+          charity: true,
+        },
+        orderBy: { createdAt: 'desc' },
+      });
+
+      if (dbReservations && dbReservations.length > 0) {
+        return dbReservations;
+      }
+    } catch (err) {
+      console.warn('[db] fetching reservations from in-memory pool:', err.message);
+    }
+
+    return global._ACTIVE_RESERVATIONS;
+  }
+
+  async cancelReservation(id, reason) {
+    const list = global._ACTIVE_RESERVATIONS || [];
+    const target = list.find((r) => r.id === id);
+    if (target) {
+      target.status = 'CANCELLED';
+      target.cancellationReason = reason || 'Cancelled by shelter coordinator';
+      target.updatedAt = new Date().toISOString();
+      return target;
+    }
+
+    try {
+      return await prisma.reservation.update({
+        where: { id },
+        data: { status: 'CANCELLED' },
+        include: { donation: true, charity: true },
+      });
+    } catch (err) {
+      console.warn('[db] cancel error:', err.message);
+      return null;
+    }
   }
 }
 
 export const donationRepository = new DonationRepository();
+
 

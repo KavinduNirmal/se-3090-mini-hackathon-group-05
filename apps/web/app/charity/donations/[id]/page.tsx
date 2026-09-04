@@ -19,7 +19,6 @@ import {
   Sparkles,
   Info,
   Loader2,
-  QrCode,
   Truck,
   ExternalLink,
 } from 'lucide-react';
@@ -218,15 +217,6 @@ export default function DonationDetailPage({
               </div>
 
               <div className="flex flex-wrap items-center justify-center gap-3 pt-2">
-                <Button
-                  asChild
-                  className="bg-[#d97706] hover:bg-[#b45309] text-white font-bold text-sm h-11 px-6 shadow-md"
-                >
-                  <Link href={`/charity/reservations/${reservationSuccess.reservationId}/pickup`}>
-                    <QrCode className="size-4 mr-2" /> View Pickup Pass & QR Code
-                  </Link>
-                </Button>
-
                 <Button
                   asChild
                   variant="outline"
