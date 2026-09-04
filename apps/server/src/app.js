@@ -4,7 +4,9 @@ import cors from 'cors';
 import { env } from './config/env.js';
 import authRouter from './modules/auth/presentation/authRouter.js';
 import rescueRouter from './modules/rescue/presentation/rescueRouter.js';
+import adminRouter from './modules/admin/presentation/adminRouter.js';
 import { errorHandler } from './shared/middleware/errorHandler.js';
+import { requireAdminApi } from './shared/middleware/requireAdminApi.js';
 import { donorsRouter } from './modules/donors/presentation/donors.router.js';
 
 // Express application bootstrap. Mounts only global middleware, health probe,
@@ -21,6 +23,8 @@ export function createApp() {
 
   // Mount Feature Presentation Routers
   app.use('/api/auth', authRouter);
+  // Admin REST API (Clerk JWT + publicMetadata.role === 'admin' guard).
+  app.use('/api/admin', requireAdminApi(), adminRouter);
   // Donor listing router first: its GET /metrics & PATCH /:id/status routes would
   // otherwise be shadowed by the rescue router's catch-all GET /:id.
   app.use('/api/donations', donorsRouter);
