@@ -26,6 +26,44 @@ export class RescueController {
       next(err);
     }
   }
+
+  async reserve(req, res, next) {
+    try {
+      const { id } = req.params;
+      const { portionsRequested, pickupEta, notes, charityName, charityId } = req.body;
+
+      const result = await rescueService.reserveDonation({
+        donationId: id,
+        charityId: charityId || req.user?.charityProfile?.id,
+        charityName: charityName || req.user?.charityProfile?.orgName,
+        portionsRequested,
+        pickupEta,
+        notes,
+      });
+
+      res.status(201).json({
+        status: 'success',
+        message: result.message,
+        data: result,
+      });
+    } catch (err) {
+      next(err);
+    }
+  }
+
+  async getReservation(req, res, next) {
+    try {
+      const { id } = req.params;
+      const reservation = await rescueService.getReservation(id);
+      res.status(200).json({
+        status: 'success',
+        data: { reservation },
+      });
+    } catch (err) {
+      next(err);
+    }
+  }
 }
 
 export const rescueController = new RescueController();
+
