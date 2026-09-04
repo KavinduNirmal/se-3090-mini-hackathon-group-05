@@ -54,9 +54,9 @@ export default function HomePage() {
               asChild
               size="lg"
               variant="secondary"
-              className="h-12 justify-between px-5"
+              className="h-12 justify-between px-5 bg-[#d97706] hover:bg-[#b45309] text-white"
             >
-              <Link href="/sign-up?role=charity">
+              <Link href="/charity/register">
                 <span className="flex items-center gap-2">
                   <HeartHandshake className="size-5" />
                   I&apos;m a charity
@@ -64,6 +64,7 @@ export default function HomePage() {
                 <ArrowRight className="size-4" />
               </Link>
             </Button>
+
           </div>
 
           <div className="mt-10 grid grid-cols-2 gap-6 border-t border-border pt-8 sm:grid-cols-4">

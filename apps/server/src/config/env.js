@@ -18,4 +18,6 @@ export const env = Object.freeze({
   corsOrigin: process.env.CORS_ORIGIN ?? '*',
   clerkSecretKey: process.env.CLERK_SECRET_KEY,
   clerkPublishableKey: process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY,
+  jwtSecret: process.env.JWT_SECRET ?? 'bhoomi-ape-secure-dev-jwt-secret-key-2026',
+  jwtExpiresIn: process.env.JWT_EXPIRES_IN ?? '7d',
 });

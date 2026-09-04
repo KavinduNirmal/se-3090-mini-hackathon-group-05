@@ -2,8 +2,13 @@ import express from 'express';
 import cors from 'cors';
 
 import { env } from './config/env.js';
+import authRouter from './modules/auth/presentation/authRouter.js';
+import rescueRouter from './modules/rescue/presentation/rescueRouter.js';
+import { errorHandler } from './shared/middleware/errorHandler.js';
 import { donorsRouter } from './modules/donors/presentation/donors.router.js';
 
+// Express application bootstrap. Mounts only global middleware, health probe,
+// and feature routers.
 export function createApp() {
   const app = express();
 
@@ -14,7 +19,16 @@ export function createApp() {
     res.json({ status: 'ok', service: 'server' });
   });
 
+  // Mount Feature Presentation Routers
+  app.use('/api/auth', authRouter);
+  // Donor listing router first: its GET /metrics & PATCH /:id/status routes would
+  // otherwise be shadowed by the rescue router's catch-all GET /:id.
   app.use('/api/donations', donorsRouter);
+  app.use('/api/donations', rescueRouter);
+
+  // Global Error Handler (must be after routers)
+  app.use(errorHandler);
 
   return app;
 }
+

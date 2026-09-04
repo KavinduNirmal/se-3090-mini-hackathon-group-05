@@ -71,6 +71,12 @@ web_modules/
 !.env.example
 !**/.env.example
 
+# Accidental committed env copies (contain live credentials)
+apps/server/src/env
+
+# npm lockfiles inside a pnpm workspace (root pnpm-lock.yaml is the source)
+apps/*/package-lock.json
+
 # parcel-bundler cache (https://parceljs.org/)
 .cache
 .parcel-cache
@@ -113,6 +119,7 @@ dist
 
 # FuseBox cache
 .fusebox/
+
 
 # DynamoDB Local files
 .dynamodb/
