@@ -91,6 +91,44 @@ export interface AdminDonation {
   updatedAt: string;
 }
 
+export interface ImpactCategoryStat {
+  category: string;
+  kg: number;
+  rescues: number;
+  portions: number;
+  meals: number;
+}
+
+export interface ImpactRankedEntry {
+  name: string;
+  type?: string | null;
+  kg: number;
+  rescues: number;
+  meals: number;
+}
+
+export interface ImpactTrendPoint {
+  month: string;
+  kg: number;
+  rescues: number;
+  portions: number;
+  meals: number;
+}
+
+export interface ImpactData {
+  totalKg: number;
+  mealsServed: number;
+  rescuesCompleted: number;
+  weekKg: number;
+  weekRescues: number;
+  monthKg: number;
+  monthRescues: number;
+  byCategory: ImpactCategoryStat[];
+  topRestaurants: ImpactRankedEntry[];
+  topCharities: ImpactRankedEntry[];
+  trend: ImpactTrendPoint[];
+}
+
 export class AdminApiError extends Error {
   constructor(
     message: string,
@@ -147,6 +185,10 @@ export function getOverview(): Promise<OverviewData> {
   return adminFetch<OverviewData>('/overview');
 }
 
+export function getImpact(): Promise<ImpactData> {
+  return adminFetch<ImpactData>('/impact');
+}
+
 export async function listCharities(options: { status?: string; q?: string } = {}): Promise<AdminCharity[]> {
   const params = new URLSearchParams();
   if (options.status) params.set('status', options.status);
@@ -170,3 +212,4 @@ export async function listDonations(options: { status?: string; flagged?: 'true'
   const qs = params.toString();
   return adminFetch<AdminDonation[]>(`/donations${qs ? `?${qs}` : ''}`);
 }
+
