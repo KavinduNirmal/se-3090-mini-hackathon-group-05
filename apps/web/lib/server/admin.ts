@@ -30,6 +30,20 @@ export interface OverviewData {
   totalKgRescued: number;
 }
 
+export interface AdminCharity {
+  id: string;
+  name: string;
+  type: string;
+  address: string | null;
+  city: string | null;
+  phone: string | null;
+  registrationNo: string | null;
+  verified: boolean;
+  status: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
 export class AdminApiError extends Error {
   constructor(
     message: string,
@@ -84,4 +98,12 @@ export async function adminFetch<T>(path: string, init?: RequestInit): Promise<T
 
 export function getOverview(): Promise<OverviewData> {
   return adminFetch<OverviewData>('/overview');
+}
+
+export async function listCharities(options: { status?: string; q?: string } = {}): Promise<AdminCharity[]> {
+  const params = new URLSearchParams();
+  if (options.status) params.set('status', options.status);
+  if (options.q) params.set('q', options.q);
+  const qs = params.toString();
+  return adminFetch<AdminCharity[]>(`/charities${qs ? `?${qs}` : ''}`);
 }
