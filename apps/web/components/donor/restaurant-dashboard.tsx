@@ -249,11 +249,13 @@ export function RestaurantDashboard() {
             </Badge>
 
             <Button
-              onClick={() => setIsCreateModalOpen(true)}
+              asChild
               className="bg-primary hover:bg-primary/90 text-primary-foreground font-semibold shadow-md gap-1.5"
             >
-              <Plus className="size-4" />
-              <span>Create Donation</span>
+              <Link href="/donor/create">
+                <Plus className="size-4" />
+                <span>Create Donation</span>
+              </Link>
             </Button>
           </div>
         </div>
@@ -520,10 +522,10 @@ export function RestaurantDashboard() {
                 No surplus food items match your filter criteria. Try clearing search or publish a new donation.
               </p>
               <Button
-                onClick={() => setIsCreateModalOpen(true)}
+                asChild
                 className="mt-4 bg-primary hover:bg-primary/90 text-primary-foreground font-semibold"
               >
-                + Create New Donation
+                <Link href="/donor/create">+ Create New Donation</Link>
               </Button>
             </div>
           ) : viewMode === 'grid' ? (
